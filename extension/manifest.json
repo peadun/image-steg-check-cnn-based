@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Steganography Detector",
+  "version": "0.1",
+  "description": "Right-click any image to check for hidden steganographic content.",
+  "permissions": ["contextMenus", "notifications"],
+  "host_permissions": ["http://localhost:5000/*", "<all_urls>"],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "stego-detector@farhad.local",
+      "strict_min_version": "109.0"
+    }
+  }
+}

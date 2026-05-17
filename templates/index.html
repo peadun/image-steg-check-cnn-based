@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Steganography Detector</title>
+<style>
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    max-width: 640px;
+    margin: 48px auto;
+    padding: 0 20px;
+    background: #f7f7f8;
+    color: #222;
+  }
+  h1 { margin-bottom: 4px; }
+  .subtitle { color: #666; margin-top: 0; margin-bottom: 32px; }
+  .card {
+    background: #fff;
+    border: 1px solid #e3e3e7;
+    border-radius: 10px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  label.model-choice {
+    display: inline-block;
+    margin-right: 16px;
+    cursor: pointer;
+  }
+  #drop {
+    border: 2px dashed #bbb;
+    border-radius: 10px;
+    padding: 36px;
+    text-align: center;
+    color: #666;
+    margin-top: 20px;
+    cursor: pointer;
+  }
+  #drop.hover { border-color: #4a7bff; background: #f0f5ff; }
+  #preview { max-width: 100%; max-height: 300px; display: none; margin-top: 16px; border-radius: 6px; }
+  button {
+    margin-top: 16px;
+    padding: 10px 20px;
+    font-size: 15px;
+    background: #4a7bff;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  button:disabled { background: #aaa; cursor: not-allowed; }
+  #result {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 8px;
+    display: none;
+  }
+  .stego { background: #fde7e9; border: 1px solid #f5a3a7; color: #a00; }
+  .clean { background: #e6f7ed; border: 1px solid #8bd1a3; color: #186a3b; }
+  .error { background: #fff3cd; border: 1px solid #ffd966; color: #7a5500; }
+  .big   { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .small { font-size: 13px; color: #555; }
+</style>
+</head>
+<body>
+  <h1>Steganography Detector</h1>
+  <p class="subtitle">Upload a JPEG image to check whether it contains hidden data.
+  This tool is specialised for JPEG-domain steganography (JUNIWARD, JMiPOD, UERD)
+  and only accepts <code>.jpg</code> / <code>.jpeg</code> files.</p>
+
+  <div class="card">
+    <div id="drop">
+      Click or drop a JPEG image here
+      <input id="file" type="file" accept="image/jpeg,.jpg,.jpeg" hidden>
+    </div>
+
+    <img id="preview">
+
+    <button id="go" disabled>Detect</button>
+
+    <div id="result"></div>
+  </div>
+
+<script>
+  const drop    = document.getElementById('drop');
+  const file    = document.getElementById('file');
+  const preview = document.getElementById('preview');
+  const go      = document.getElementById('go');
+  const result  = document.getElementById('result');
+
+  let selectedFile = null;
+
+  drop.onclick = () => file.click();
+  file.onchange = () => handle(file.files[0]);
+
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add('hover'); };
+  drop.ondragleave = () => drop.classList.remove('hover');
+  drop.ondrop = e => {
+    e.preventDefault();
+    drop.classList.remove('hover');
+    handle(e.dataTransfer.files[0]);
+  };
+
+  function handle(f) {
+    if (!f) return;
+    selectedFile = f;
+    preview.src = URL.createObjectURL(f);
+    preview.style.display = 'block';
+    go.disabled = false;
+    result.style.display = 'none';
+  }
+
+  go.onclick = async () => {
+    if (!selectedFile) return;
+    go.disabled = true;
+    go.textContent = 'Analyzing …';
+    result.style.display = 'none';
+
+    const data = new FormData();
+    data.append('image', selectedFile);
+
+    try {
+      const r = await fetch('/predict', { method: 'POST', body: data });
+      const j = await r.json();
+      if (j.error) {
+        result.className = 'error';
+        result.innerHTML = `<div class="big">Error</div><div class="small">${j.error}</div>`;
+      } else {
+        result.className = j.is_stego ? 'stego' : 'clean';
+        const verdict = j.is_stego ? 'Steganography detected' : 'No steganography detected';
+        result.innerHTML = `
+          <div class="big">${verdict}</div>
+          <div class="small">${j.model} · confidence ${j.confidence}%</div>`;
+      }
+    } catch (err) {
+      result.className = 'error';
+      result.innerHTML = `<div class="big">Request failed</div><div class="small">${err}</div>`;
+    } finally {
+      result.style.display = 'block';
+      go.disabled = false;
+      go.textContent = 'Detect';
+    }
+  };
+</script>
+</body>
+</html>

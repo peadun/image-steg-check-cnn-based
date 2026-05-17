@@ -1,0 +1,108 @@
+# ─── Python ───────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# ─── OS junk ──────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ─── IDEs / Editors ───────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+
+# ─── Dataset (DO NOT COMMIT — 30+ GB, copyrighted) ────────────────────────
+ALASKA2/
+data/
+*/Cover/
+*/JMiPOD/
+*/JUNIWARD/
+*/UERD/
+*/Test/
+
+# ─── TensorBoard logs (large; not needed in repo) ─────────────────────────
+tb/
+events.out.tfevents.*
+
+# ─── Temp upload files from the Flask server ──────────────────────────────
+upload_*
+/tmp/upload_*
+
+# ─── Old / unused checkpoints and previous-iteration model dirs ──────────
+EfficientNet_ImageNet_JUNIWARD/
+SRNet_randomcrop_stable/
+SRNet_*/
+*_randomcrop_*/
+*_old/
+old_*/
+
+# Keep only the headline ckpt-780000 from the main run, exclude others
+EfficientNet_ALASKA2_8thrun/ckpt-585000*
+EfficientNet_ALASKA2_8thrun/ckpt-615000*
+EfficientNet_ALASKA2_8thrun/ckpt-690000*
+EfficientNet_ALASKA2_8thrun/ckpt-750000*
+EfficientNet_ALASKA2_8thrun/ckpt-787500*
+
+# Any TF Checkpoint metadata file in any directory — never wanted in repo
+checkpoint
+**/checkpoint
+
+# ─── Secrets / local config (defence in depth) ────────────────────────────
+.env
+.env.*
+*.pem
+*.key
+.ssh/
+
+# ─── Misc ─────────────────────────────────────────────────────────────────
+*.log
+*.tmp
+*.bak
+*.zip
+*.tar.gz
+
+# ─── Internal project notes — DO NOT make public ──────────────────────────
+fyp_context.md
+GithubUpload/
+
+# ─── Security-demo test artefacts ─────────────────────────────────────────
+evil.*
+fake.*
+huge.*
+test.jpg
+
+# ─── Vestigial SRNet codebase (migrated away from) ────────────────────────
+tflib/
+srnet_inference.py
+
+# ─── Development scratch / diagnostic scripts ─────────────────────────────
+check_checkpoint.py
+validAcc.txt
+
+# ─── Duplicate / vast-instance-specific training script ───────────────────
+train_efficientnetVAST.py
