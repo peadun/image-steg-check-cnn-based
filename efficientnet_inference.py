@@ -27,7 +27,18 @@ def _load_model():
     if _session is not None:
         return _session
     import onnxruntime as rt
-    _session = rt.InferenceSession(ONNX_PATH)
+
+    # Memory-conservative session options for low-RAM hosts (e.g. Render free 512 MB).
+    # The model has stem stride=1, so early-layer 512×512 activations dominate
+    # peak memory. Disabling the memory arena + pattern optimisation trades some
+    # speed for ~30-50% lower peak usage.
+    opts = rt.SessionOptions()
+    opts.enable_cpu_mem_arena = False
+    opts.enable_mem_pattern   = False
+    opts.intra_op_num_threads = 1
+    opts.graph_optimization_level = rt.GraphOptimizationLevel.ORT_ENABLE_ALL
+
+    _session = rt.InferenceSession(ONNX_PATH, sess_options=opts)
     print(f"  ONNX model loaded ({os.path.getsize(ONNX_PATH) / 1024 / 1024:.1f} MB)")
     return _session
 
