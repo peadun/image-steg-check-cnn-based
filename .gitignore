@@ -106,3 +106,9 @@ validAcc.txt
 
 # ─── Duplicate / vast-instance-specific training script ───────────────────
 train_efficientnetVAST.py
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
