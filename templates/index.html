@@ -98,6 +98,11 @@
 
     <img id="preview">
 
+    <label style="display: block; margin-top: 16px; font-size: 14px; color: #444; cursor: pointer;">
+      <input type="checkbox" id="tta" checked style="vertical-align: middle;">
+      Use TTA (slower, +0.31 pp accuracy from averaging 8 D4 orientations)
+    </label>
+
     <button id="go" disabled>Detect</button>
 
     <div id="progress">
@@ -114,6 +119,7 @@
   const preview  = document.getElementById('preview');
   const go       = document.getElementById('go');
   const result   = document.getElementById('result');
+  const tta      = document.getElementById('tta');
   const progress = document.getElementById('progress');
   const fill     = progress.querySelector('.progress-fill');
   const ptext    = progress.querySelector('.progress-text');
@@ -141,31 +147,36 @@
   }
 
   // Progress animation: time-based, since the backend is one-shot (no SSE).
-  // Inference takes ~40s on Render free tier (0.1 CPU, 8 TTA passes).
-  // Fill to 95% over EST_DURATION_MS, then jump to 100% when fetch resolves.
-  const EST_DURATION_MS = 38000;
+  // Inference takes ~40s with TTA (8 passes) or ~5s without on Render free tier.
+  // Fill to 95% over the estimated duration, then jump to 100% when fetch resolves.
   let progressTimer = null;
 
-  function startProgress() {
+  function startProgress(useTta) {
     progress.style.display = 'block';
     fill.style.width = '0%';
     ptext.textContent = 'Starting…';
 
+    const est = useTta ? 38000 : 5000;
     const start = Date.now();
     progressTimer = setInterval(() => {
       const elapsed = Date.now() - start;
-      const pct = Math.min(95, (elapsed / EST_DURATION_MS) * 95);
+      const pct = Math.min(95, (elapsed / est) * 95);
       fill.style.width = pct + '%';
 
-      if      (elapsed <  1500) ptext.textContent = 'Loading model…';
-      else if (elapsed <  6000) ptext.textContent = 'Running inference (1/8)…';
-      else if (elapsed < 11000) ptext.textContent = 'Running inference (2/8)…';
-      else if (elapsed < 16000) ptext.textContent = 'Running inference (3/8)…';
-      else if (elapsed < 21000) ptext.textContent = 'Running inference (4/8)…';
-      else if (elapsed < 26000) ptext.textContent = 'Running inference (5/8)…';
-      else if (elapsed < 31000) ptext.textContent = 'Running inference (6/8)…';
-      else if (elapsed < 36000) ptext.textContent = 'Running inference (7/8)…';
-      else                       ptext.textContent = 'Almost done…';
+      if (useTta) {
+        if      (elapsed <  1500) ptext.textContent = 'Loading model…';
+        else if (elapsed <  6000) ptext.textContent = 'Running inference (1/8)…';
+        else if (elapsed < 11000) ptext.textContent = 'Running inference (2/8)…';
+        else if (elapsed < 16000) ptext.textContent = 'Running inference (3/8)…';
+        else if (elapsed < 21000) ptext.textContent = 'Running inference (4/8)…';
+        else if (elapsed < 26000) ptext.textContent = 'Running inference (5/8)…';
+        else if (elapsed < 31000) ptext.textContent = 'Running inference (6/8)…';
+        else if (elapsed < 36000) ptext.textContent = 'Running inference (7/8)…';
+        else                       ptext.textContent = 'Almost done…';
+      } else {
+        if   (elapsed < 1500) ptext.textContent = 'Loading model…';
+        else                  ptext.textContent = 'Running inference…';
+      }
     }, 200);
   }
 
@@ -181,10 +192,12 @@
     go.disabled = true;
     go.textContent = 'Analyzing …';
     result.style.display = 'none';
-    startProgress();
+    const useTta = tta.checked;
+    startProgress(useTta);
 
     const data = new FormData();
     data.append('image', selectedFile);
+    data.append('use_tta', useTta ? 'true' : 'false');
 
     try {
       const r = await fetch('/predict', { method: 'POST', body: data });
