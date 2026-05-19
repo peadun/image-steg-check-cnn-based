@@ -124,7 +124,7 @@ def predict():
                              f'max {MAX_IMAGE_DIMENSION}×{MAX_IMAGE_DIMENSION})'
                 }), 400
 
-        is_stego, confidence = efficientnet_inference.predict(tmp_path, use_tta=False)
+        is_stego, confidence = efficientnet_inference.predict(tmp_path)
         return jsonify({
             'model':      'EfficientNet',
             'is_stego':   bool(is_stego),
