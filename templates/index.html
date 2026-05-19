@@ -119,7 +119,7 @@
     data.append('image', selectedFile);
 
     try {
-      const r = await fetch('https://cnn-steg-check-tool.onrender.com/predict', { method: 'POST', body: data });
+      const r = await fetch('/predict', { method: 'POST', body: data });
       const j = await r.json();
       if (j.error) {
         result.className = 'error';
