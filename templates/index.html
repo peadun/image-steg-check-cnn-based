@@ -48,6 +48,29 @@
     cursor: pointer;
   }
   button:disabled { background: #aaa; cursor: not-allowed; }
+  #progress {
+    margin-top: 20px;
+    display: none;
+  }
+  .progress-bar {
+    background: #e3e3e7;
+    border-radius: 8px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    background: #4a7bff;
+    height: 100%;
+    width: 0%;
+    border-radius: 8px;
+    transition: width 0.3s ease-out;
+  }
+  .progress-text {
+    font-size: 13px;
+    color: #555;
+    margin-top: 8px;
+    text-align: center;
+  }
   #result {
     margin-top: 20px;
     padding: 16px;
@@ -77,15 +100,23 @@
 
     <button id="go" disabled>Detect</button>
 
+    <div id="progress">
+      <div class="progress-bar"><div class="progress-fill"></div></div>
+      <div class="progress-text">Starting…</div>
+    </div>
+
     <div id="result"></div>
   </div>
 
 <script>
-  const drop    = document.getElementById('drop');
-  const file    = document.getElementById('file');
-  const preview = document.getElementById('preview');
-  const go      = document.getElementById('go');
-  const result  = document.getElementById('result');
+  const drop     = document.getElementById('drop');
+  const file     = document.getElementById('file');
+  const preview  = document.getElementById('preview');
+  const go       = document.getElementById('go');
+  const result   = document.getElementById('result');
+  const progress = document.getElementById('progress');
+  const fill     = progress.querySelector('.progress-fill');
+  const ptext    = progress.querySelector('.progress-text');
 
   let selectedFile = null;
 
@@ -109,11 +140,48 @@
     result.style.display = 'none';
   }
 
+  // Progress animation: time-based, since the backend is one-shot (no SSE).
+  // Inference takes ~40s on Render free tier (0.1 CPU, 8 TTA passes).
+  // Fill to 95% over EST_DURATION_MS, then jump to 100% when fetch resolves.
+  const EST_DURATION_MS = 38000;
+  let progressTimer = null;
+
+  function startProgress() {
+    progress.style.display = 'block';
+    fill.style.width = '0%';
+    ptext.textContent = 'Starting…';
+
+    const start = Date.now();
+    progressTimer = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const pct = Math.min(95, (elapsed / EST_DURATION_MS) * 95);
+      fill.style.width = pct + '%';
+
+      if      (elapsed <  1500) ptext.textContent = 'Loading model…';
+      else if (elapsed <  6000) ptext.textContent = 'Running inference (1/8)…';
+      else if (elapsed < 11000) ptext.textContent = 'Running inference (2/8)…';
+      else if (elapsed < 16000) ptext.textContent = 'Running inference (3/8)…';
+      else if (elapsed < 21000) ptext.textContent = 'Running inference (4/8)…';
+      else if (elapsed < 26000) ptext.textContent = 'Running inference (5/8)…';
+      else if (elapsed < 31000) ptext.textContent = 'Running inference (6/8)…';
+      else if (elapsed < 36000) ptext.textContent = 'Running inference (7/8)…';
+      else                       ptext.textContent = 'Almost done…';
+    }, 200);
+  }
+
+  function stopProgress() {
+    if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+    fill.style.width = '100%';
+    ptext.textContent = 'Done';
+    setTimeout(() => { progress.style.display = 'none'; }, 400);
+  }
+
   go.onclick = async () => {
     if (!selectedFile) return;
     go.disabled = true;
     go.textContent = 'Analyzing …';
     result.style.display = 'none';
+    startProgress();
 
     const data = new FormData();
     data.append('image', selectedFile);
@@ -135,6 +203,7 @@
       result.className = 'error';
       result.innerHTML = `<div class="big">Request failed</div><div class="small">${err}</div>`;
     } finally {
+      stopProgress();
       result.style.display = 'block';
       go.disabled = false;
       go.textContent = 'Detect';
