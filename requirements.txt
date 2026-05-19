@@ -7,6 +7,8 @@ numpy>=1.24
 
 # Web server (used by server.py)
 flask>=3.0
+flask-cors>=4.0
+gunicorn>=21.0
 
 # Optional — used only by efficientnet_inference.py's TTA inference helpers
 # (already covered by numpy + pillow + tensorflow above; no extra deps needed)

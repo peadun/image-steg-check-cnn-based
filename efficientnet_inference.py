@@ -12,14 +12,14 @@ import os
 import sys
 import numpy as np
 
-# ── hardcoded WSL paths ──────────────────────────────────────────────────────
-_TFLIB_DIR = "/mnt/c/Users/Ahmad Farhad/Documents/UniKL/FYP"
+_APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
-if _TFLIB_DIR not in sys.path:
-    sys.path.insert(0, _TFLIB_DIR)
+if _APP_DIR not in sys.path:
+    sys.path.insert(0, _APP_DIR)
 
-# Best checkpoint (72.00% test accuracy, PE 0.2800)
-CHECKPOINT_PATH = "/mnt/c/Users/Ahmad Farhad/Documents/UniKL/FYP/EfficientNet_ALASKA2_8thrun/ckpt-780000"
+CHECKPOINT_PATH = os.path.join(
+    _APP_DIR, "EfficientNet_ALASKA2_8thrun", "ckpt-780000"
+)
 CROP_SIZE = 512
 # JUNIWARD ckpt-90000 was trained with 11 MBConv blocks kept (cutoff block5c,
 # trunk output = 112 channels → Dense kernel shape [112, 2] in the checkpoint).

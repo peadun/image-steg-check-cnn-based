@@ -26,6 +26,7 @@ import tempfile
 import uuid
 
 from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
 
 # Make sure we can import the inference modules
 _APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -35,6 +36,7 @@ if _APP_DIR not in sys.path:
 import efficientnet_inference
 
 app = Flask(__name__)
+CORS(app)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024   # 20 MB upload limit (A3)
 
 # ── File-upload validation ───────────────────────────────────────────────────
@@ -122,7 +124,7 @@ def predict():
                              f'max {MAX_IMAGE_DIMENSION}×{MAX_IMAGE_DIMENSION})'
                 }), 400
 
-        is_stego, confidence = efficientnet_inference.predict(tmp_path)
+        is_stego, confidence = efficientnet_inference.predict(tmp_path, use_tta=False)
         return jsonify({
             'model':      'EfficientNet',
             'is_stego':   bool(is_stego),
