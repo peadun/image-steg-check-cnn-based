@@ -6,9 +6,24 @@ architectural modifications following Hong et al. (2023). Targets three
 adaptive JPEG-domain steganographic algorithms: **JUNIWARD**, **JMiPOD**,
 and **UERD**.
 
-The project ships three user-facing interfaces:
+## 🚀 Live demo
 
-- A **Flask web application** with drag-and-drop upload
+Try the tool in your browser — no installation needed:
+
+**https://cnn-steg-check-tool.onrender.com**
+
+Deployed on Render.com free tier (Docker + onnxruntime). The first request
+after idle takes ~30 s to cold-start the container; subsequent inferences
+take ~40 s with TTA enabled (8 D4 orientations averaged) or ~5 s without.
+The slowness reflects Render's free-tier ~0.1 shared CPU allocation, not
+the model itself.
+
+## Interfaces
+
+The project ships four user-facing interfaces:
+
+- The **hosted web app** linked above (Flask + ONNX Runtime on Render)
+- A **local Flask web application** with drag-and-drop upload
 - A **Firefox browser extension** with a right-click "Check for steganography" context menu
 - A **Tkinter desktop prototype**
 
