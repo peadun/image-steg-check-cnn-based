@@ -85,18 +85,30 @@ to read the README.
 
 ### Requirements
 
-- Python 3.10+
-- TensorFlow 2.16 or newer (Keras 3)
-- Pillow, NumPy, Flask
+**For inference (running the web app, CLI, browser extension):**
+
+- Python 3.11
+- `onnxruntime`, `flask`, `flask-cors`, `gunicorn`, `pillow`, `numpy`
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Inference runs on CPU. Training was conducted on a single NVIDIA RTX 4090
-(24 GB VRAM) at batch size 8.
+Inference uses [ONNX Runtime](https://onnxruntime.ai/) on CPU and does
+**not** require TensorFlow. The trained model is shipped as
+`model.onnx` (1.8 MB).
 
-### Dataset
+**For training (optional, if you want to retrain from scratch):**
+
+- TensorFlow 2.16+ (Keras 3)
+- A GPU is strongly recommended; training the headline model took
+  ~50 hours on a single NVIDIA RTX 4090 (24 GB VRAM) at batch size 8.
+
+```bash
+pip install tensorflow tf2onnx
+```
+
+### Dataset (only needed for retraining)
 
 The model was trained on the [ALASKA2 dataset](https://www.kaggle.com/c/alaska2-image-steganalysis)
 from the 2020 Kaggle competition. To reproduce training, download the dataset
@@ -113,12 +125,23 @@ ALASKA2/
 └── UERD/       # 75,000 stego JPEGs (UERD algorithm)
 ```
 
-### Trained checkpoint
+### Trained model
 
-The pre-trained checkpoint achieving 76.28% test accuracy with ensemble + TTA
-is included in `EfficientNet_ALASKA2_8thrun/` (the `ckpt-780000` files).
-Update `CHECKPOINT_PATH` in `efficientnet_inference.py` if you place it
-elsewhere.
+The trained model is shipped in two formats:
+
+- **`model.onnx`** — used by the deployed app and the local Flask server.
+  Loaded directly by `efficientnet_inference.py` (~1.8 MB).
+- **`EfficientNet_ALASKA2_8thrun/ckpt-780000.*`** — original TensorFlow
+  checkpoint, kept for reference / retraining.
+
+If you retrain or fine-tune the model, regenerate `model.onnx` with:
+
+```bash
+python convert_to_onnx.py
+```
+
+(this requires the training-environment dependencies, including
+TensorFlow and `tf2onnx`).
 
 ## Usage
 
@@ -146,10 +169,14 @@ Output is a single JSON line, e.g.:
 {"is_stego": true, "confidence": 87.34}
 ```
 
-Test-time augmentation is enabled by default and adds ~1-2 pp of accuracy at
-the cost of running the model on 8 orientations per image (~6-8 seconds on
-CPU). Pass `use_tta=False` to the `predict()` function for a single
-forward pass.
+Test-time augmentation (TTA) is enabled by default. It runs the model on
+all 8 D4 orientations and averages the softmax outputs, adding +0.31 pp
+of measured test accuracy (75.91% → 76.22%, see results table) at the
+cost of 8× the inference time. Pass `use_tta=False` to the `predict()`
+function for a single forward pass.
+
+The deployed web app also exposes a checkbox to toggle TTA on/off live —
+useful for comparing speed vs accuracy on the same image.
 
 ### Desktop prototype (Windows)
 
@@ -203,6 +230,20 @@ For ensemble or TTA evaluation:
 python train_efficientnet.py --mode test_ensemble --tta \
     --checkpoints EfficientNet_ALASKA2_8thrun/ckpt-780000
 ```
+
+After retraining, export the new checkpoint to ONNX so the web app
+and CLI can use it (these tools load `model.onnx`, not the TF checkpoint):
+
+```bash
+python convert_to_onnx.py
+```
+
+## Deployment (optional)
+
+The hosted demo runs on Render.com's free Docker tier. To deploy your own
+copy, fork this repository and connect it to Render — the included
+`Dockerfile`, `Procfile`, and `runtime.txt` are sufficient. No additional
+configuration is needed since `model.onnx` is committed to the repository.
 
 ## References
 
